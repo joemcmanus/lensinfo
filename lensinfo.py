@@ -1,21 +1,27 @@
 #!/usr/bin/env python
-#Python script to make charts of lens/camera data
-#I only tried this on Micro 4/3 cameras... so you know, it might not work, but it is free. 
-#Joe McManus josephmc@alumni.cmu.edu
-#version 0.2 2015.01.07
-#Copyright (C) 2015 Joe McManus
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Python script to help you understand how you use your camera equipment
+# To do this it creates CSVs and charts of the gear you use. 
+# I have used this mostly on Micro 4/3 cameras... 
+# It might not work on all cameras, but it should, probably will, I bet it would. 
 #
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Joe McManus josephmc@alumni.cmu.edu
+# version 0.8 2015.06.23
+# Copyright (C) 2015 Joe McManus
 #
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+version="0.8"
 
 import csv 
 import sys
@@ -23,39 +29,74 @@ import os
 import re
 import fnmatch
 from collections import Counter
-import exifread
-from pylab import *
-from scipy import *
-import numpy.numarray as na
 
-version="0.2"
+#Exifread https://pypi.python.org/pypi/ExifRead
+try:
+	import exifread
+except: 
+	print "ERROR: Could not import module exifread. Not installed?" 
+	sys.exit()
+
+#Pylab http://wiki.scipy.org/PyLab
+try: 
+	from pylab import *
+except: 
+	print "ERROR: Could not import module PyLab. Not installed?" 
+	sys.exit()
+
+#Scipy http://wiki.scipy.org
+try:
+	from scipy import *
+except: 
+	print "ERROR: Could not import module SciPy. Not installed?" 
+	sys.exit()
+
+#Numpy http://www.numpy.org/ 
+try:
+	import numpy.numarray as na
+except: 
+	print "ERROR: Could not import module NumPY. Not installed?" 
+	sys.exit()
+
+#Maplotlib http://matplotlib.org/examples/index.html
+try: 
+	import matplotlib.pyplot as plt 
+	from matplotlib.ticker import MaxNLocator
+except: 
+	print "ERROR: Could not import module MatPlotLib. Not installed?" 
+	sys.exit()
+
 
 def printUsage(error): 
-	print("lensinfo.py: Command Line EXIF reader and grapher \n" 
-	+ version + " Joe McManus josephmc@alumni.cmu.edu \n" 
-	+ "Usage: lensinfo.py (imageName | recursive directoryName) \n"
+	print("\n\nlensinfo.py: Command Line EXIF reader and grapher \n" 
+	+ "v. " + version + " Joe McManus josephmc@alumni.cmu.edu \n" 
+	+ "Usage: lensinfo.py (imageName | directoryName) \n"
 	+ " -- options: \n"
 	+ "     imageName      Displays EXIF info from a single file, no graphs \n"
-	+ "     recursive      Recursively looks at all image files in a path, displays a graph\n" 
-	+ "     directoryName  The directory with images in it\n"
+	+ "     directoryName  Recursviely looks at all image files in a path, displays a graph\n" 
 	+ "     help           displays this message \n")
 	if error != None:
 		print("\nERROR: " + error )
 	sys.exit()
 
 def commandLineOptions():
+	if len(sys.argv) == 2 and sys.argv[1] == "help" :
+		printUsage(None)
 	if len(sys.argv) < 2:
-		printUsage("Must supply image file")
-	if sys.argv[1] == "recursive":
-		if len(sys.argv) == 3:
-			if os.path.isdir(sys.argv[2]):
-				return "recursive"
-		else: 
-			printUsage("Gave recursive option but invalid directory arguments")
-	if os.path.isfile(sys.argv[1]):
+		printUsage("Must supply image file or directory name")
+	#Determine if the argument given was a directory or filename
+	if os.path.isdir(sys.argv[1]):
+		return "recursive"
+	elif os.path.isfile(sys.argv[1]):  
 		return sys.argv[1]
 	else:
-		printUsage("File " + sys.argv[1] + " not found.")
+		printUsage("Must specify  a valid file or directory. " + sys.argv[1] + " not valid.")
+
+def colorNator(j):
+	if j == 0:
+		return ['gray', 1]
+	else:
+		return ['blue', 0]
 
 def getSourceFile(image):
 	#If for some reason you are on a mac and use iPhoto, it can strip out EXIF tags.
@@ -77,8 +118,11 @@ def getExif(image):
 			printUsage("Unable to open file " + image + ", check permisssions.")
 	if 'EXIF LensModel' in tags:
 		lens=tags['EXIF LensModel']
-	else:
+	elif 'EXIF FocalLength' in tags:
 		lens=tags['EXIF FocalLength']
+	else: 
+		printUsage("Unable to read tags in " + image)
+
 	lens=str(lens).strip()
 
 	camera=(str(tags['Image Model'])).strip()	
@@ -105,16 +149,129 @@ def getExif(image):
 		lens="unknown"
 	else: 
 		lens=lens
-	return lens, camera
+	#I have been using zooms more, lets graph focal length. 
+	if 'EXIF FocalLength' in tags:
+		focalLength=str(tags['EXIF FocalLength'])
+	return lens, camera, focalLength
+
+def autolabel(rects):
+	for rect in rects:
+		height = rect.get_height()
+		plt.text(rect.get_x()+rect.get_width()/2., 1.02*height, '%d'%int(height), ha='center', va='bottom')
+
+def createGraph(itemArray, chartTitle, xTitle, yTitle):
+	#Get a unique list of things 
+	cnt = Counter()
+	for item in itemArray: 
+		cnt[item] += 1
+
+	#Print a CSV of the things and count
+	for item, count in cnt.most_common():
+		print(item + ", " + str(count))
+
+	i=1
+	total = 0
+	j=0
+	labels=[]
+	chartData=[]
+
+	#Start adding things to the graph
+	for itemArray, count in cnt.most_common():
+		try:
+			labels.append(itemArray)           #This makes the labels
+			chartData.append(int(count))       #This adds the item data
+			i += 1
+		except:
+			print("ERROR: Skipping line not in correct format.")
+	if i == 1:
+	       printUsage("No records read, bad file?")
+
+
+	#Create the camera graph
+	N=len(labels)
+	xlocations = np.arange(N)
+	width = 0.5
+	p1=plt.bar(xlocations, chartData, width)
+	plt.title(chartTitle)
+	plt.xticks(xlocations, labels, rotation=75)
+	plt.xlim(0, xlocations[-1]+width*2)
+	plt.ylabel(yTitle)
+	plt.xlabel(xTitle)
+	autolabel(p1)
+	plt.show()
+
+def createBubble(itemArray, chartTitle, xTitle, yTitle):
+	#Get a unique list of things 
+	cnt = Counter()
+	for item in itemArray: 
+		cnt[item] += 1
+
+	#Print a CSV of the things and count
+	#for item, count in cnt.most_common():
+	#	print(item + ", " + str(count))
+
+	x=[0]
+	y = [0]
+	color= ["white"]
+	area = [0]
+	i=0
+	total = 0
+	j=0
+	labels=[]
+	chartData=[]
+
+	for item, count in cnt.most_common():
+		try:
+			yVal=int(count) 		# Pic  Count
+			xVal=int(item) 			# Pic  Count
+			y.append(yVal)
+			x.append(xVal)			# Focal Length
+			colors=colorNator(j)		# Alternate Colors
+			j=colors[1] 
+			color.append(colors[0])		# Add the color
+			area.append(len(cnt.most_common()) *  (int(yVal)))	# Define circle size
+			text(xVal, yVal, xVal, size=11, horizontalalignment='center') #Bubble Text
+			i += 1
+			
+		except:
+			print("ERROR: Skipping line not in correct format.")
+	#Create the chart
+	plt.scatter(x, y, c=color, s=area, linewidths=2, edgecolor='w')
+	axis([0,max(x)*1.25, 0, max(y)*1.25])
+	title(chartTitle)
+	xlabel(xTitle)
+	ylabel(yTitle)
+	plt.show()
+
+
+def createPlot(itemArray, chartTitle, xTitle, yTitle):
+	x=[0]
+	y=[0]
+	#Get a unique list of things 
+	cnt = Counter()
+	for item in itemArray: 
+		cnt[item] += 1
+
+	#Print a CSV of the things and count
+	for item, count in cnt.most_common():
+		print(item + ", " + str(count))
+		x.append(item)
+		y.append(count)
+
+	plt.plot(x,y, 'bo')
+	plt.title(chartTitle)
+	plt.xlabel(xTitle)
+	plt.ylabel(yTitle)
+	plt.show()
 
 #Grab the filename from command line
 imageFile=commandLineOptions()
 
-
 if imageFile == "recursive":
 	lensData = []
-	justLensData = []
-	for rootDir, dirnames, filenames in os.walk(sys.argv[2]):
+	camData = []
+	focalData = []
+	for rootDir, dirnames, filenames in os.walk(sys.argv[1]):
 		for filename in filenames:
 			imageFile=os.path.join(rootDir,filename)
 			#Check for a JPG
@@ -124,53 +281,19 @@ if imageFile == "recursive":
 				#fileName=getSourceFile(imageFile)
 				fileName=imageFile
 				rawLensData=getExif(fileName)
-				if rawLensData[1] != "iPhone 5s":
-					lensData.append(rawLensData)
-				justLensData.append(rawLensData[0])
+				lensData.append(rawLensData[0])
+				camData.append(rawLensData[1])
+				focalData.append(rawLensData[2])
 else:
-	getExif(imageFile)
-
-if sys.argv[1] != "recursive":
+	imageInfo=getExif(imageFile)
+	print("Image  : " + imageFile)
+	print("Camera : " + imageInfo[1])
+	print("Lens   : " + imageInfo[0])
 	sys.exit()
 
-#Get a unique list of lens
-cnt = Counter()
-for lens in justLensData: 
-	cnt[lens] += 1
 
-for lens, count in cnt.most_common():
-	#print lens[0], lens[1], count
-	print(lens + ", " + str(count))
+createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
+createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
+createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
+#createPlot(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
 
-
-#Graph defaults
-color = ["white"]
-area = [0]
-i=1
-total = 0
-j=0
-labels=[]
-chartData=[]
-
-#Actually process some data
-for lens, count in cnt.most_common():
-	try:
-		labels.append(lens)		#This makes the labels 
-		chartData.append(int(count))	#This counts the lens data	
-		i += 1
-	except:
-		print("ERROR: Skipping line not in correct format.") 
-if i == 1:
-	printUsage("No records read, bad file?")
-
-#Create the graph
-xlocations = na.array(range(len(chartData)))+0.5
-width=0.5
-bar(xlocations, chartData,  width=width)
-xticks(xlocations, labels, rotation=45)
-xlim(0, xlocations[-1]+width*2)
-title("Pictures by Lens")
-gca().get_xaxis().tick_bottom()
-gca().get_yaxis().tick_left()
-
-show()
