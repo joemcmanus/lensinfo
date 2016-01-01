@@ -28,6 +28,7 @@ import sys
 import os
 import re
 import fnmatch
+import argparse
 from collections import Counter
 
 #Exifread https://pypi.python.org/pypi/ExifRead
@@ -66,31 +67,39 @@ except:
 	print "ERROR: Could not import module MatPlotLib. Not installed?" 
 	sys.exit()
 
-
-def printUsage(error): 
-	print("\n\nlensinfo.py: Command Line EXIF reader and grapher \n" 
-	+ "v. " + version + " Joe McManus josephmc@alumni.cmu.edu \n" 
-	+ "Usage: lensinfo.py (imageName | directoryName) \n"
-	+ " -- options: \n"
-	+ "     imageName      Displays EXIF info from a single file, no graphs \n"
-	+ "     directoryName  Recursviely looks at all image files in a path, displays a graph\n" 
-	+ "     help           displays this message \n")
-	if error != None:
-		print("\nERROR: " + error )
+#PrettyTable
+try: 
+	from prettytable import PrettyTable
+except:
+	print "ERROR: Could not import module PrettyTable. Not installed?" 
 	sys.exit()
+	
+parser = argparse.ArgumentParser(description='n\nlensinfo.py: Command Line EXIF reader and grapher \n')
+parser.add_argument('path', help="Specify a path to the file or directory to read, directories recurse.")
+parser.add_argument('--ignore', help="Lenses to ignore, format --ignore \"Olympus 8mm\",\"OLYMPUS M.12-40mm F2.8\"", action="store")
+parser.add_argument('--text', help="Print only text", action="store_true")
+parser.add_argument('--version', action='version',version='%(prog)s 0.9')
+args=parser.parse_args()
+
+if args.ignore:
+	ignoreList=[]
+	ignoreCount=0
+	print("--ignore specified, skipping the following lenses: " )
+	for lens in args.ignore.split(','):
+		print(lens)
+		ignoreList.append(lens)
 
 def commandLineOptions():
-	if len(sys.argv) == 2 and sys.argv[1] == "help" :
-		printUsage(None)
-	if len(sys.argv) < 2:
-		printUsage("Must supply image file or directory name")
 	#Determine if the argument given was a directory or filename
-	if os.path.isdir(sys.argv[1]):
+	if os.path.isdir(args.path):
 		return "recursive"
-	elif os.path.isfile(sys.argv[1]):  
-		return sys.argv[1]
+	elif os.path.isfile(args.path):  
+		return args.path
 	else:
-		printUsage("Must specify  a valid file or directory. " + sys.argv[1] + " not valid.")
+		printUsage("Must specify  a valid file or directory. " + args.path + " not valid.")
+
+#Grab the filename from command line
+imageFile=commandLineOptions()
 
 def colorNator(j):
 	if j == 0:
@@ -114,7 +123,7 @@ def getExif(image):
 		f = open(image)
 		tags=exifread.process_file(f)
 	except: 
-		if sys.argv[1] != "recursive": 
+		if imageFile != "recursive": 
 			printUsage("Unable to open file " + image + ", check permisssions.")
 	if 'EXIF LensModel' in tags:
 		lens=tags['EXIF LensModel']
@@ -164,11 +173,12 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
 	cnt = Counter()
 	for item in itemArray: 
 		cnt[item] += 1
-
-	#Print a CSV of the things and count
+	table = PrettyTable(["Lens", "Count"])
+	#Print a table of the things and count
 	for item, count in cnt.most_common():
-		print(item + ", " + str(count))
+		table.add_row([item, count])
 
+	print(table)
 	i=1
 	total = 0
 	j=0
@@ -198,17 +208,14 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
 	plt.ylabel(yTitle)
 	plt.xlabel(xTitle)
 	autolabel(p1)
-	plt.show()
+	if not args.text:
+		plt.show()
 
 def createBubble(itemArray, chartTitle, xTitle, yTitle):
 	#Get a unique list of things 
 	cnt = Counter()
 	for item in itemArray: 
 		cnt[item] += 1
-
-	#Print a CSV of the things and count
-	#for item, count in cnt.most_common():
-	#	print(item + ", " + str(count))
 
 	x=[0]
 	y = [0]
@@ -241,37 +248,15 @@ def createBubble(itemArray, chartTitle, xTitle, yTitle):
 	title(chartTitle)
 	xlabel(xTitle)
 	ylabel(yTitle)
-	plt.show()
+	if not args.text:
+		plt.show()
 
-
-def createPlot(itemArray, chartTitle, xTitle, yTitle):
-	x=[0]
-	y=[0]
-	#Get a unique list of things 
-	cnt = Counter()
-	for item in itemArray: 
-		cnt[item] += 1
-
-	#Print a CSV of the things and count
-	for item, count in cnt.most_common():
-		print(item + ", " + str(count))
-		x.append(item)
-		y.append(count)
-
-	plt.plot(x,y, 'bo')
-	plt.title(chartTitle)
-	plt.xlabel(xTitle)
-	plt.ylabel(yTitle)
-	plt.show()
-
-#Grab the filename from command line
-imageFile=commandLineOptions()
 
 if imageFile == "recursive":
 	lensData = []
 	camData = []
 	focalData = []
-	for rootDir, dirnames, filenames in os.walk(sys.argv[1]):
+	for rootDir, dirnames, filenames in os.walk(args.path):
 		for filename in filenames:
 			imageFile=os.path.join(rootDir,filename)
 			#Check for a JPG
@@ -281,9 +266,12 @@ if imageFile == "recursive":
 				#fileName=getSourceFile(imageFile)
 				fileName=imageFile
 				rawLensData=getExif(fileName)
-				lensData.append(rawLensData[0])
-				camData.append(rawLensData[1])
-				focalData.append(rawLensData[2])
+				if rawLensData[0] not in ignoreList: 
+					lensData.append(rawLensData[0])
+					camData.append(rawLensData[1])
+					focalData.append(rawLensData[2])
+				else: 
+					ignoreCount = ignoreCount + 1
 else:
 	imageInfo=getExif(imageFile)
 	print("Image  : " + imageFile)
@@ -295,5 +283,5 @@ else:
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
-#createPlot(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
-
+if ignoreCount:
+	print("Skipped {} photos from ignore list." . format(ignoreCount))
