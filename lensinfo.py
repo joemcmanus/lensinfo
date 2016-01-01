@@ -5,7 +5,7 @@
 # It might not work on all cameras, but it should, probably will, I bet it would. 
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 0.8 2015.06.23
+# version 0.9 2015.12.31
 # Copyright (C) 2015 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version="0.8"
 
 import csv 
 import sys
@@ -78,7 +77,7 @@ parser = argparse.ArgumentParser(description='n\nlensinfo.py: Command Line EXIF 
 parser.add_argument('path', help="Specify a path to the file or directory to read, directories recurse.")
 parser.add_argument('--ignore', help="Lenses to ignore, format --ignore \"Olympus 8mm\",\"OLYMPUS M.12-40mm F2.8\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
-parser.add_argument('--version', action='version',version='%(prog)s 0.9')
+parser.add_argument('--version', action='version',version='%(prog)s 0.9 2015/12/31')
 args=parser.parse_args()
 
 if args.ignore:
