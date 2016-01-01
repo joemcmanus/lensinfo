@@ -73,9 +73,9 @@ except:
 	print "ERROR: Could not import module PrettyTable. Not installed?" 
 	sys.exit()
 	
-parser = argparse.ArgumentParser(description='n\nlensinfo.py: Command Line EXIF reader and grapher \n')
+parser = argparse.ArgumentParser(description='\n\nlensinfo.py: Command Line EXIF reader and grapher \n')
 parser.add_argument('path', help="Specify a path to the file or directory to read, directories recurse.")
-parser.add_argument('--ignore', help="Lenses to ignore, format --ignore \"Olympus 8mm\",\"OLYMPUS M.12-40mm F2.8\"", action="store")
+parser.add_argument('--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
 parser.add_argument('--version', action='version',version='%(prog)s 0.9 2015/12/31')
 args=parser.parse_args()
