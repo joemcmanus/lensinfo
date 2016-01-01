@@ -176,7 +176,8 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
 	cnt = Counter()
 	for item in itemArray: 
 		cnt[item] += 1
-	table = PrettyTable(["Lens", "Count"])
+	heading=chartTitle.split(" ")
+	table = PrettyTable([heading[2], "Count"])
 	#Print a table of the things and count
 	for item, count in cnt.most_common():
 		table.add_row([item, count])
