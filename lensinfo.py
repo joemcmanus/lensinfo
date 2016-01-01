@@ -80,8 +80,8 @@ parser.add_argument('--text', help="Print only text", action="store_true")
 parser.add_argument('--version', action='version',version='%(prog)s 0.9 2015/12/31')
 args=parser.parse_args()
 
+ignoreList=[]
 if args.ignore:
-	ignoreList=[]
 	ignoreCount=0
 	print("--ignore specified, skipping the following lenses: " )
 	for lens in args.ignore.split(','):
@@ -96,6 +96,10 @@ def commandLineOptions():
 		return args.path
 	else:
 		printUsage("Must specify  a valid file or directory. " + args.path + " not valid.")
+
+def printUsage(errorMessage):
+	print(errorMessage)
+	quit()
 
 #Grab the filename from command line
 imageFile=commandLineOptions()
@@ -207,6 +211,7 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
 	plt.ylabel(yTitle)
 	plt.xlabel(xTitle)
 	autolabel(p1)
+	#plt.tight_layout()
 	if not args.text:
 		plt.show()
 
@@ -271,6 +276,7 @@ if imageFile == "recursive":
 					focalData.append(rawLensData[2])
 				else: 
 					ignoreCount = ignoreCount + 1
+
 else:
 	imageInfo=getExif(imageFile)
 	print("Image  : " + imageFile)
@@ -282,5 +288,5 @@ else:
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
-if ignoreCount:
+if len(ignoreList) > 0:
 	print("Skipped {} photos from ignore list." . format(ignoreCount))
