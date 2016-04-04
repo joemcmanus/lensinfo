@@ -5,7 +5,7 @@
 # It might not work on all cameras, but it should, probably will, I bet it would. 
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 0.9 2015.12.31
+# version 1.0 2016.04.02
 # Copyright (C) 2015 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
@@ -77,7 +77,7 @@ parser = argparse.ArgumentParser(description='\n\nlensinfo.py: Command Line EXIF
 parser.add_argument('path', help="Specify a path to the file or directory to read, directories recurse.")
 parser.add_argument('--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
-parser.add_argument('--version', action='version',version='%(prog)s 0.9 2015/12/31')
+parser.add_argument('--version', action='version',version='%(prog)s 1.0 2016/04/02')
 args=parser.parse_args()
 
 ignoreList=[]
@@ -255,7 +255,16 @@ def createBubble(itemArray, chartTitle, xTitle, yTitle):
 	ylabel(yTitle)
 	if not args.text:
 		plt.show()
-
+	heading=chartTitle.split(" ")
+	table = PrettyTable([heading[2], "Count"])
+	#Print a table of the things and count
+	i=0
+	for item, count in cnt.most_common():
+		table.add_row([item, count])
+		i=i+1
+		if i == 10:
+			break
+	print(table)
 
 if imageFile == "recursive":
 	lensData = []
