@@ -5,7 +5,7 @@
 # It might not work on all cameras, but it should, probably will, I bet it would. 
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 1.0 2016.04.02
+# version 1.1 2016.05.16
 # Copyright (C) 2015 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ import os
 import re
 import fnmatch
 import argparse
-from collections import Counter
+from collections import Counter, defaultdict
 
 #Exifread https://pypi.python.org/pypi/ExifRead
 try:
@@ -77,7 +77,7 @@ parser = argparse.ArgumentParser(description='\n\nlensinfo.py: Command Line EXIF
 parser.add_argument('path', help="Specify a path to the file or directory to read, directories recurse.")
 parser.add_argument('--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
-parser.add_argument('--version', action='version',version='%(prog)s 1.0 2016/04/02')
+parser.add_argument('--version', action='version',version='%(prog)s 1.1 2016/05/16')
 args=parser.parse_args()
 
 ignoreList=[]
@@ -164,7 +164,20 @@ def getExif(image):
 	#I have been using zooms more, lets graph focal length. 
 	if 'EXIF FocalLength' in tags:
 		focalLength=str(tags['EXIF FocalLength'])
-	return lens, camera, focalLength
+	else:
+		focalLength=None
+
+	if 'EXIF FNumber' in tags:
+		fnumber=str(tags['EXIF FNumber'])
+		regex=re.compile('/')
+		if regex.search(fnumber):
+			numbers=fnumber.split('/')
+			fnumber=(float(numbers[0])/float(numbers[1]))
+		fnumber=float(fnumber)
+	else:
+		fnumber=None
+
+	return lens, camera, focalLength, fnumber
 
 def autolabel(rects):
 	for rect in rects:
@@ -266,10 +279,64 @@ def createBubble(itemArray, chartTitle, xTitle, yTitle):
 			break
 	print(table)
 
+def createFstop(lensAndFstop, appData, chartTitle, xTitle, yTitle): 
+	uniqueFstops=set(appData)
+	uniqueFstops=sorted(uniqueFstops)
+	uniqueFstops=list(uniqueFstops)
+	groupedLensFstop = {}
+	for k, v in lensAndFstop: 
+		groupedLensFstop.setdefault(k , []).append(v)
+
+	pltLegend=[]
+	table = PrettyTable(["Lens" , "Fstop", "Count"])
+	lineSwitch=0	
+	for k,v in groupedLensFstop.iteritems():
+		pltLegend.append(k)
+		cnt = Counter()
+		for fstop in v:
+			cnt[fstop] += 1
+		yData=[]
+		xData=[]
+		for fstop, count in sorted(cnt.most_common()):
+			table.add_row([k, fstop, count])
+			xData.append(count)
+			yData.append(fstop)
+				
+		if lineSwitch == 0 :
+			lineMarker='o'
+			lineType='-'
+			lineSwitch=1
+		elif lineSwitch == 1 :
+			lineMarker='o'
+			lineType='--'
+			lineSwitch=2
+		elif lineSwitch == 2 :
+			lineMarker='o'
+			lineType='-.'
+			lineSwitch=3
+		else:
+			lineMarker='o'
+			lineType=':'
+			lineSwitch=0
+		plt.plot(yData, xData, marker=lineMarker, linestyle=lineType)
+	
+	plt.title(chartTitle)
+	plt.ylabel(yTitle)
+	plt.xlabel(xTitle)
+	plt.legend(pltLegend)
+	N=len(uniqueFstops) 
+	xlocations = np.arange(N)
+	if not args.text:
+		plt.show()
+
+	print(table)
+
 if imageFile == "recursive":
 	lensData = []
 	camData = []
 	focalData = []
+	appData = []
+	lensAndFstop = []
 	for rootDir, dirnames, filenames in os.walk(args.path):
 		for filename in filenames:
 			imageFile=os.path.join(rootDir,filename)
@@ -284,6 +351,8 @@ if imageFile == "recursive":
 					lensData.append(rawLensData[0])
 					camData.append(rawLensData[1])
 					focalData.append(rawLensData[2])
+					appData.append(rawLensData[3])
+					lensAndFstop.append((rawLensData[0] , rawLensData[3]))
 				else: 
 					ignoreCount = ignoreCount + 1
 
@@ -292,11 +361,20 @@ else:
 	print("Image  : " + imageFile)
 	print("Camera : " + imageInfo[1])
 	print("Lens   : " + imageInfo[0])
+	print("Length : " + imageInfo[2])
+	print("FStop  : " + imageInfo[3])
 	sys.exit()
 
 
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
+createFstop(lensAndFstop, appData, "Picture at FStop & Lens", "Fstop", "# of Pictures")
+
+
+quit()
+
+
 if len(ignoreList) > 0:
 	print("Skipped {} photos from ignore list." . format(ignoreCount))
+
