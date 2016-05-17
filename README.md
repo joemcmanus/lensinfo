@@ -21,6 +21,7 @@ Usage is:
 
 
 To read a single file run lensinfo.py fileName
+
     sazed:2015 joe$ lensinfo.py 12-31_moabride/PC310003.jpg 
     Image  : 12-31_moabride/PC310003.jpg
     Camera : E-M1
