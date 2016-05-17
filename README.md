@@ -46,6 +46,7 @@ This the following creates graphs.
 ![](https://lh3.googleusercontent.com/-vVvPaGukrCo/VU2TyUUjphI/AAAAAAAAV7Q/e4v1iJu3D_E/s800/lenses2015.png)
 ![](https://lh3.googleusercontent.com/-Qo7SXNjOWK4/VYZMHpBnbyI/AAAAAAAAWcM/qjTLr_Tu-QY/s800/picBubble.jpg)
 ![](https://lh3.googleusercontent.com/-JCg5mRFEniQ/VYZMHpkUTzI/AAAAAAAAWcI/xuhxEczOi1s/s800/picCamera.jpg)
+![](https://lh3.googleusercontent.com/-GHSasomLWv4/VzspyiTMQmI/AAAAAAAAZp0/GZrySeA432s7OXSdgHAv54ca6AJTMCQEQCCo/s800/fstop.png)
 
 To print text only output add --text
 
