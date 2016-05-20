@@ -5,7 +5,7 @@
 # It might not work on all cameras, but it should, probably will, I bet it would. 
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 1.1 2016.05.16
+# version 1.2 2016.05.20
 # Copyright (C) 2015 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
@@ -136,28 +136,14 @@ def getExif(image):
 		printUsage("Unable to read tags in " + image)
 
 	lens=str(lens).strip()
+	lens=re.sub('OLYMPUS ','', lens)
 
 	camera=(str(tags['Image Model'])).strip()	
 
 	#Normalize the lenses between Panasonic and Olympus
-	if lens == "0":
-		#No lens read returns a focal length of 0, I use the 9mm BCL.. so. 
-		lens="OLYMPUS 9mm BCL"
-	elif lens == "12":
-		lens="OLYMPUS M.12mm F2.0"
-	elif lens == "14":
-		lens="Panasonic 14mm F2.5"
-	elif lens == "17":
-		lens="OLYMPUS M.17mm F1.8"
-	elif lens == "25":
-		lens="OLYMPUS M.25mm F1.8"
-	elif lens == "60":
-		lens="OLYMPUS M.60mm F2.8 Macro"
-	elif lens == "75":
-		lens="OLYMPUS M.75mm F1.8"
-	elif lens == "9":
-		lens="OLYMPUS M.9-18mm F4.0-5.6"
-	elif lens.isdigit():
+	if lens.isdigit():
+		lens="unknown"
+	elif re.match('iPhone', lens):
 		lens="unknown"
 	else: 
 		lens=lens
