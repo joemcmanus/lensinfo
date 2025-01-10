@@ -5,8 +5,8 @@
 # It might not work on all cameras, but it should, probably will, I bet it would.
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 1.2 2024-07-24
-# Copyright (C) 2024 Joe McManus
+# version 1.3 2025-01-09
+# Copyright (C) 2025 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,49 +22,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import csv
-import sys
 import os
 import re
 import fnmatch
 import argparse
 from collections import Counter, defaultdict
 
-# Exifread https://pypi.python.org/pypi/ExifRead
-try:
-    import exifread
-except:
-    print("ERROR: Could not import module exifread. Not installed?")
-    sys.exit()
+import exifread
+import numpy as np
+import plotly
 
-# Scipy http://wiki.scipy.org
-try:
-    from scipy import *
-except:
-    print("ERROR: Could not import module SciPy. Not installed?")
-    sys.exit()
-
-# Numpy http://www.numpy.org/
-try:
-    import numpy as np
-except:
-    print("ERROR: Could not import module NumPY. Not installed?")
-    sys.exit()
-
-# Maplotlib http://matplotlib.org/examples/index.html
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import MaxNLocator
-except:
-    print("ERROR: Could not import module MatPlotLib. Not installed?")
-    sys.exit()
-
-# PrettyTable
-try:
-    from prettytable import PrettyTable
-except:
-    print("ERROR: Could not import module PrettyTable. Not installed?")
-    sys.exit()
+from prettytable import PrettyTable
 
 parser = argparse.ArgumentParser(
     description='\n\nlensinfo.py: Command Line EXIF reader and grapher \n')
@@ -73,8 +41,7 @@ parser.add_argument(
 parser.add_argument(
     '--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
-parser.add_argument('--version', action='version',
-                    version='%(prog)s 1.1 2016/05/16')
+parser.add_argument('--version', action='version', version='%(prog)s ')
 args = parser.parse_args()
 
 ignoreList = []
@@ -189,43 +156,26 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
         table.add_row([item, count])
 
     print(table)
-    i = 1
-    total = 0
-    j = 0
-    labels = []
-    chartData = []
 
-    # Start adding things to the graph
-    for itemArray, count in cnt.most_common():
-        try:
-            labels.append(itemArray)  # This makes the labels
-            chartData.append(int(count))  # This adds the item data
-            i += 1
-        except:
-            pass
-    if i == 1:
-        printUsage("No records read, bad file?")
+    xData = []
+    yData = []
+    # sort data and create xy
+    for key, count in cnt.most_common():
+        xData.append(key)
+        yData.append(count)
 
-    # Create the camera graph
-    N = len(labels)
-    xlocations = np.arange(N)
-    width = 0.5
-    p1 = plt.bar(xlocations, chartData, width)
-    plt.title(chartTitle)
-    plt.xticks(xlocations, labels, rotation=75)
-    plt.xlim(0, xlocations[-1]+width*2)
-    plt.ylabel(yTitle)
-    plt.xlabel(xTitle)
-    autolabel(p1)
-    # plt.tight_layout()
-    if not args.text:
-        plt.show()
+    plotly.offline.plot({
+       "data": [plotly.graph_objs.Bar(x=xData, y=yData)],
+       "layout": plotly.graph_objs.Layout(title=chartTitle,
+           xaxis=dict(title=xTitle),
+           yaxis=dict(title=yTitle))})
 
 
 def createBubble(itemArray, chartTitle, xTitle, yTitle):
     # Get a unique list of things
     cnt = Counter()
     for item in itemArray:
+
         cnt[item] += 1
 
     x = [0]
@@ -250,16 +200,16 @@ def createBubble(itemArray, chartTitle, xTitle, yTitle):
             # Define circle size
             area.append(len(cnt.most_common()) * (int(yVal)))
             text(xVal, yVal, xVal, size=11,
-                 horizontalalignment='center')  # Bubble Text
+                 horizontalalignment = 'center')  # Bubble Text
             i += 1
 
         except:
             pass
     # Create the chart
     plt.scatter(x, y, c=color, s=area, linewidths=2, edgecolor='w')
-    #axis([0, max(x)*1.25, 0, max(y)*1.25])
-    #xlabel(xTitle)
-    #ylabel(yTitle)
+    # axis([0, max(x)*1.25, 0, max(y)*1.25])
+    # xlabel(xTitle)
+    # ylabel(yTitle)
     if not args.text:
         plt.show()
     heading = chartTitle.split(" ")
@@ -360,13 +310,15 @@ else:
     print(("Lens   : " + imageInfo[0]))
     print(("Length : " + imageInfo[2]))
     print(("FStop  : " + imageInfo[3]))
-    sys.exit()
+    quit()
 
 
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
+quit()
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
-createFstop(lensAndFstop, appData, "Picture at FStop & Lens", "Fstop", "No. of Pictures")
+createFstop(lensAndFstop, appData, "Picture at FStop & Lens",
+            "Fstop", "No. of Pictures")
 
 
 quit()
