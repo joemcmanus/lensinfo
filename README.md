@@ -44,10 +44,9 @@ To read all files in a directory specify the directory name.
 
 This the following creates graphs. 
 
-![](https://lh3.googleusercontent.com/-vVvPaGukrCo/VU2TyUUjphI/AAAAAAAAV7Q/e4v1iJu3D_E/s800/lenses2015.png)
-![](https://lh3.googleusercontent.com/-Qo7SXNjOWK4/VYZMHpBnbyI/AAAAAAAAWcM/qjTLr_Tu-QY/s800/picBubble.jpg)
-![](https://lh3.googleusercontent.com/-JCg5mRFEniQ/VYZMHpkUTzI/AAAAAAAAWcI/xuhxEczOi1s/s800/picCamera.jpg)
-![](https://lh3.googleusercontent.com/-GHSasomLWv4/VzspyiTMQmI/AAAAAAAAZp0/GZrySeA432s7OXSdgHAv54ca6AJTMCQEQCCo/s800/fstop.png)
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg))
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo2.jpg))
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo3.jpg))
 
 To print text only output add --text
 
@@ -84,18 +83,8 @@ To ignore a specific lens, type the exact name of the lens enclosed in quotes an
     | E-M5 |  908  |
     +------+-------+
     Skipped 330 photos from ignore list.
-![](https://lh3.googleusercontent.com/-z68HCLa_Y1Y/VoXl98FAIpI/AAAAAAAAYes/qj5jvZ6p5Ps/s800-Ic42/PicByLens2015.png)
-![](https://lh3.googleusercontent.com/-kmoHcnnmwf4/VoXl9piQb1I/AAAAAAAAYeo/xwbObjT21gM/s800-Ic42/PicByFocalLength2015.png)
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg)\
 
-Requires matplotlib, scipy, prettytable & exifread. I would just use pip to install them all... or download, whatever floats your boat. 
-
-Scipy : http://www.scipy.org/install.html
-
-Exifread: https://pypi.python.org/pypi/ExifRead
-
-Matplotlib: http://matplotlib.org/
-
-PrettyTable: https://github.com/dprince/python-prettytable
 
 
 
