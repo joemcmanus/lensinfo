@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # Python script to help you understand how you use your camera equipment
-# To do this it creates CSVs and charts of the gear you use.
-# I have used this mostly on Micro 4/3 cameras...
 # It might not work on all cameras, but it should, probably will, I bet it would.
 #
 # Joe McManus josephmc@alumni.cmu.edu
