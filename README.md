@@ -4,18 +4,17 @@ LensInfo.py is a python script that reads lens info out of EXIF data to create g
 Usage is:
 
     sazed:lensinfo joe$ ./lensinfo.py -h
-    usage: lensinfo.py [-h] [--ignore IGNORE] [--text] [--version] path
-        
+    usage: lensinfo.py [-h] [--ignore IGNORE] [--file FILE] [--text] [--version] path
+    
     lensinfo.py: Command Line EXIF reader and grapher
-    
+
     positional arguments:
-    path             Specify a path to the file or directory to read,
-                     directories will recurse.
-    
+      path             Specify a path to the file or directory to read, directories recurse.
+
     optional arguments:
       -h, --help       show this help message and exit
-      --ignore IGNORE  Comma separated list of lenses to ignore, --ignore "Olympus
-                       8mm","OLYMPUS M.17mm F1.8"
+      --ignore IGNORE  Comma seperated list of lenses to ignore, --ignore "Olympus 8mm","OLYMPUS M.17mm F1.8"
+      --file FILE      filename pattern to look for, --file "L10"
       --text           Print only text
       --version        show program's version number and exit
 
@@ -27,7 +26,7 @@ To read a single file run lensinfo.py fileName
     Camera : E-M1
     Lens   : OLYMPUS M.8mm F1.8
 
-To read all files in a directory specify the directory name. 
+To read all files in a directory specify the directory name. Note this is recursive, so if you say `directoryA` it will look at sub directories in that folder, `dirA/dir1, dirA/dir2...`.
 
     sazed:2015 joe$ lensinfo.py 12-31_moabride
     +------------------------+-------+
