@@ -29,8 +29,10 @@ import argparse
 from collections import Counter, defaultdict
 
 import exifread
-import numpy as np
 import plotly
+import plotly.graph_objects as go
+import plotly.express as px
+import pandas as pd
 
 from prettytable import PrettyTable
 
@@ -71,13 +73,6 @@ def printUsage(errorMessage):
 
 # Grab the filename from command line
 imageFile = commandLineOptions()
-
-
-def colorNator(j):
-    if j == 0:
-        return ['gray', 1]
-    else:
-        return ['blue', 0]
 
 
 def getSourceFile(image):
@@ -156,7 +151,8 @@ def createGraph(itemArray, chartTitle, xTitle, yTitle):
         table.add_row([item, count])
 
     print(table)
-
+    if args.text:
+        return(True)
     xData = []
     yData = []
     # sort data and create xy
@@ -175,45 +171,54 @@ def createBubble(itemArray, chartTitle, xTitle, yTitle):
     # Get a unique list of things
     cnt = Counter()
     for item in itemArray:
-
         cnt[item] += 1
 
     x = [0]
     y = [0]
-    color = ["white"]
-    area = [0]
     i = 0
     total = 0
     j = 0
     labels = []
     chartData = []
+    bubbleSize= []
 
     for item, count in cnt.most_common():
         try:
             yVal = int(count)		# Pic  Count
-            xVal = int(item)			# Pic  Count
+            xVal = int(item)		# Pic  Count
             y.append(yVal)
             x.append(xVal)			# Focal Length
-            colors = colorNator(j)		# Alternate Colors
-            j = colors[1]
-            color.append(colors[0])		# Add the color
             # Define circle size
-            area.append(len(cnt.most_common()) * (int(yVal)))
-            text(xVal, yVal, xVal, size=11,
-                 horizontalalignment = 'center')  # Bubble Text
+            bubbleSize.append(yVal / len(itemArray) * 1000)
             i += 1
-
         except:
             pass
     # Create the chart
-    plt.scatter(x, y, c=color, s=area, linewidths=2, edgecolor='w')
-    # axis([0, max(x)*1.25, 0, max(y)*1.25])
-    # xlabel(xTitle)
-    # ylabel(yTitle)
+    fig = go.Figure(data=[go.Scatter(
+        x=x,y=y,
+        mode='markers+text',marker_size=bubbleSize, text=x)
+        #mode='markers')
+
+    ])
+    fig.update_layout(
+        title=dict(text=chartTitle),
+        xaxis=dict(
+            title=dict(text=xTitle),
+            gridcolor='white',
+            type='log',
+            gridwidth=2,
+        ),
+        yaxis=dict(
+            title=dict(text=yTitle),
+            gridcolor='white',
+            gridwidth=2,
+        )
+    )          
     if not args.text:
-        plt.show()
-    heading = chartTitle.split(" ")
-    table = PrettyTable([heading[2], "Count"])
+        fig.show()
+
+
+    table = PrettyTable([chartTitle, "Count"])
     # Print a table of the things and count
     i = 0
     for item, count in cnt.most_common():
@@ -229,53 +234,24 @@ def createFstop(lensAndFstop, appData, chartTitle, xTitle, yTitle):
     uniqueFstops = sorted(uniqueFstops)
     uniqueFstops = list(uniqueFstops)
     groupedLensFstop = {}
+    lensList=[]
     for k, v in lensAndFstop:
         groupedLensFstop.setdefault(k, []).append(v)
 
-    pltLegend = []
     table = PrettyTable(["Lens", "Fstop", "Count"])
-    lineSwitch = 0
     for k, v in groupedLensFstop.items():
-        pltLegend.append(k)
         cnt = Counter()
         for fstop in v:
             cnt[fstop] += 1
         yData = []
         xData = []
+        fstopData=[]
+        lensList.append(k)
         for fstop, count in sorted(cnt.most_common()):
             table.add_row([k, fstop, count])
             xData.append(count)
             yData.append(fstop)
-
-        if lineSwitch == 0:
-            lineMarker = 'o'
-            lineType = '-'
-            lineSwitch = 1
-        elif lineSwitch == 1:
-            lineMarker = 'o'
-            lineType = '--'
-            lineSwitch = 2
-        elif lineSwitch == 2:
-            lineMarker = 'o'
-            lineType = '-.'
-            lineSwitch = 3
-        else:
-            lineMarker = 'o'
-            lineType = ':'
-            lineSwitch = 0
-        plt.plot(yData, xData, marker=lineMarker, linestyle=lineType)
-
-    plt.title(chartTitle)
-    plt.ylabel(yTitle)
-    plt.xlabel(xTitle)
-    plt.legend(pltLegend)
-    N = len(uniqueFstops)
-    xlocations = np.arange(N)
-    if not args.text:
-        plt.show()
-
     print(table)
-
 
 if imageFile == "recursive":
     lensData = []
@@ -314,15 +290,9 @@ else:
 
 
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
-quit()
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
-createFstop(lensAndFstop, appData, "Picture at FStop & Lens",
-            "Fstop", "No. of Pictures")
-
-
-quit()
-
+createFstop(lensAndFstop, appData, "Picture at FStop & Lens", "Fstop", "No. of Pictures")
 
 if len(ignoreList) > 0:
     print(("Skipped {} photos from ignore list." . format(ignoreCount)))
