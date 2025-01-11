@@ -42,10 +42,9 @@ To read all files in a directory specify the directory name. Note this is recurs
     +------+-------+
 
 This the following creates graphs. 
-
-![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg))
-![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo2.jpg))
-![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo3.jpg))
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg)
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo2.jpg)
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo3.jpg)
 
 To print text only output add --text
 
@@ -82,7 +81,7 @@ To ignore a specific lens, type the exact name of the lens enclosed in quotes an
     | E-M5 |  908  |
     +------+-------+
     Skipped 330 photos from ignore list.
-![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg)\
+![](https://raw.githubusercontent.com/joemcmanus/lensinfo/refs/heads/master/LensInfo1.jpg)
 
 
 
