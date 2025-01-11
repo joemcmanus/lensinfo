@@ -5,7 +5,7 @@
 # It might not work on all cameras, but it should, probably will, I bet it would.
 #
 # Joe McManus josephmc@alumni.cmu.edu
-# version 1.3 2025-01-09
+# version 1.4 2025-01-11
 # Copyright (C) 2025 Joe McManus
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@ import os
 import re
 import fnmatch
 import argparse
+import time
 from collections import Counter, defaultdict
 
 import exifread
@@ -38,10 +39,9 @@ from prettytable import PrettyTable
 
 parser = argparse.ArgumentParser(
     description='\n\nlensinfo.py: Command Line EXIF reader and grapher \n')
-parser.add_argument(
-    'path', help="Specify a path to the file or directory to read, directories recurse.")
-parser.add_argument(
-    '--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
+parser.add_argument( 'path', help="Specify a path to the file or directory to read, directories recurse.")
+parser.add_argument( '--ignore', help="Comma seperated list of lenses to ignore, --ignore \"Olympus 8mm\",\"OLYMPUS M.17mm F1.8\"", action="store")
+parser.add_argument( '--file', help="filename pattern to look for, --file \"L10\"", action="store")
 parser.add_argument('--text', help="Print only text", action="store_true")
 parser.add_argument('--version', action='version', version='%(prog)s ')
 args = parser.parse_args()
@@ -245,13 +245,33 @@ def createFstop(lensAndFstop, appData, chartTitle, xTitle, yTitle):
             cnt[fstop] += 1
         yData = []
         xData = []
-        fstopData=[]
         lensList.append(k)
         for fstop, count in sorted(cnt.most_common()):
             table.add_row([k, fstop, count])
             xData.append(count)
             yData.append(fstop)
     print(table)
+    
+    #create bars for stacked bars
+    #First we need to create the index, which for us is lensList
+    #next we create a list of unique fstops, which we have done with uniqueFstops
+    #so now we have to go through each lens and add zeros where there is no fstop
+    fstopXdata=[]
+    for k, v in groupedLensFstop.items():
+        cnt = Counter()
+        for fstop in v:
+            cnt[fstop] += 1
+        #now loop through the uniqueFstops and add zeros
+        for fstop in uniqueFstops:
+            if fstop not in v:
+                cnt[fstop] = 0
+        xData = []
+        for fstop, count in sorted(cnt.most_common()):
+            xData.append(count)
+        fstopXdata.append(xData)
+    fig= px.bar(pd.DataFrame(fstopXdata, columns=uniqueFstops, index=lensList), title="F-Stops")
+    fig.show()
+    
 
 if imageFile == "recursive":
     lensData = []
@@ -263,8 +283,8 @@ if imageFile == "recursive":
         for filename in filenames:
             imageFile = os.path.join(rootDir, filename)
             # Check for a JPG
-            regex = re.compile('jpg|jpeg|png|gif', re.IGNORECASE)
-            if regex.search(imageFile):
+            regex = re.compile("jpg|jpeg|png|gif", re.IGNORECASE)
+            if regex.search(imageFile) and args.file in imageFile :
                 # Uncomment this and comment out the line 2 down for source files
                 # fileName=getSourceFile(imageFile)
                 fileName = imageFile
@@ -290,8 +310,11 @@ else:
 
 
 createGraph(lensData,  "Pictures by Lens", "Lens", "Pictures")
+time.sleep(0.1)
 createGraph(camData, "Pictures by Camera", "Camera", "Pictures")
+time.sleep(0.1)
 createBubble(focalData, "Pictures by Focal Length", "Focal Length", "Pictures")
+time.sleep(0.1)
 createFstop(lensAndFstop, appData, "Picture at FStop & Lens", "Fstop", "No. of Pictures")
 
 if len(ignoreList) > 0:
